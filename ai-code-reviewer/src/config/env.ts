@@ -5,7 +5,7 @@ export const config = {
     model: "gpt-4o-mini", // Cost-effective for learning
   },
   github: {
-    token: "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",
+    token: "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",
     webhookSecret: "super-secret-abc123",
   },
   server: {

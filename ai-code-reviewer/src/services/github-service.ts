@@ -347,4 +347,199 @@ export class GitHubService {
       updated_at: repo.updated_at,
     }));
   }
+
+  // NEW: Check PR status và conflicts
+  async checkPullRequestStatus(
+    owner: string,
+    repo: string,
+    pullNumber: number
+  ) {
+    const { data } = await this.octokit.rest.pulls.get({
+      owner,
+      repo,
+      pull_number: pullNumber,
+    });
+
+    // Check merge status
+    const mergeableState = data.mergeable_state; // 'clean', 'dirty', 'unstable', 'blocked', etc.
+    const mergeable = data.mergeable; // true/false/null
+
+    // Get check runs for the latest commit
+    const checkRuns = await this.getCheckRuns(owner, repo, data.head.sha);
+
+    // Get PR reviews
+    const reviews = await this.getPullRequestReviews(owner, repo, pullNumber);
+
+    return {
+      mergeable,
+      mergeableState,
+      hasConflicts: mergeable === false,
+      state: data.state, // 'open', 'closed'
+      merged: data.merged,
+      checkRuns,
+      reviews,
+      head: {
+        sha: data.head.sha,
+        ref: data.head.ref,
+      },
+      base: {
+        sha: data.base.sha,
+        ref: data.base.ref,
+      },
+    };
+  }
+
+  // NEW: Get check runs (CI/CD status)
+  async getCheckRuns(owner: string, repo: string, sha: string) {
+    try {
+      const { data } = await this.octokit.rest.checks.listForRef({
+        owner,
+        repo,
+        ref: sha,
+      });
+
+      return data.check_runs.map((run) => ({
+        name: run.name,
+        status: run.status, // 'queued', 'in_progress', 'completed'
+        conclusion: run.conclusion, // 'success', 'failure', 'neutral', 'cancelled', 'timed_out', 'action_required'
+        url: run.html_url,
+        started_at: run.started_at,
+        completed_at: run.completed_at,
+      }));
+    } catch (error) {
+      // Nếu không có check runs thì return empty array
+      return [];
+    }
+  }
+
+  // NEW: Get PR reviews
+  async getPullRequestReviews(owner: string, repo: string, pullNumber: number) {
+    const { data } = await this.octokit.rest.pulls.listReviews({
+      owner,
+      repo,
+      pull_number: pullNumber,
+    });
+
+    return data.map((review) => ({
+      user: review.user?.login,
+      state: review.state, // 'APPROVED', 'REQUEST_CHANGES', 'COMMENTED'
+      body: review.body,
+      submitted_at: review.submitted_at,
+    }));
+  }
+
+  // NEW: Approve pull request
+  async approvePullRequest(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    message?: string
+  ) {
+    return await this.octokit.rest.pulls.createReview({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      event: "APPROVE",
+      body:
+        message ||
+        "✅ Automatically approved - No conflicts or errors detected!",
+    });
+  }
+
+  // NEW: Request changes
+  async requestChanges(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    message: string
+  ) {
+    return await this.octokit.rest.pulls.createReview({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      event: "REQUEST_CHANGES",
+      body: message,
+    });
+  }
+
+  // NEW: Merge pull request
+  async mergePullRequest(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    options?: {
+      commitTitle?: string;
+      commitMessage?: string;
+      mergeMethod?: "merge" | "squash" | "rebase";
+    }
+  ) {
+    const mergeMethod = options?.mergeMethod || "merge";
+
+    return await this.octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      commit_title: options?.commitTitle,
+      commit_message: options?.commitMessage,
+      merge_method: mergeMethod,
+    });
+  }
+
+  // NEW: Create status comment
+  async createStatusComment(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    status: {
+      hasConflicts: boolean;
+      hasErrors: boolean;
+      checksPassed: boolean;
+      approved: boolean;
+      details: string;
+    }
+  ) {
+    const { hasConflicts, hasErrors, checksPassed, approved, details } = status;
+
+    let emoji = "";
+    let statusText = "";
+    let actions = "";
+
+    if (hasConflicts) {
+      emoji = "⚠️";
+      statusText = "CONFLICTS DETECTED";
+      actions =
+        "🔧 **Action Required:** Please resolve merge conflicts before proceeding.";
+    } else if (hasErrors) {
+      emoji = "❌";
+      statusText = "ERRORS DETECTED";
+      actions =
+        "🐛 **Action Required:** Please fix the errors in CI/CD checks.";
+    } else if (!checksPassed) {
+      emoji = "🔄";
+      statusText = "CHECKS PENDING";
+      actions = "⏳ **Waiting:** CI/CD checks are still running.";
+    } else if (approved && checksPassed) {
+      emoji = "✅";
+      statusText = "READY TO MERGE";
+      actions = "🚀 **Success:** All checks passed! PR can be merged safely.";
+    } else {
+      emoji = "📋";
+      statusText = "REVIEW REQUIRED";
+      actions = "👀 **Action Required:** Waiting for code review approval.";
+    }
+
+    const message = `
+${emoji} **${statusText}**
+
+${actions}
+
+**Details:**
+${details}
+
+---
+*🤖 Automated status check by AI Code Reviewer*
+    `.trim();
+
+    return await this.createReviewComment(owner, repo, pullNumber, message);
+  }
 }

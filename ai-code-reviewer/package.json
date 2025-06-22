@@ -4,7 +4,8 @@
   "description": "AI Code Review Tool with Gemini AI and GitHub API",
   "scripts": {
     "chat": "npx ts-node src/chat-gemini.ts",
-    "preview": "npx ts-node src/preview-pull-request.ts"
+    "preview": "npx ts-node src/preview-pull-request.ts",
+    "auto-review": "npx ts-node src/auto-review-pr.ts"
   },
   "keywords": [
     "ai",
