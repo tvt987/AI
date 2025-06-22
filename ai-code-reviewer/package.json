@@ -5,7 +5,8 @@
   "scripts": {
     "chat": "npx ts-node src/chat-gemini.ts",
     "preview": "npx ts-node src/preview-pull-request.ts",
-    "auto-review": "npx ts-node src/auto-review-pr.ts"
+    "auto-review": "npx ts-node src/auto-review-pr.ts",
+    "auto-review-action": "npx ts-node src/auto-review-action.ts"
   },
   "keywords": [
     "ai",
