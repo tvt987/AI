@@ -10,6 +10,11 @@ export class GitHubService {
     });
   }
 
+  // Expose octokit for advanced usage (safer than 'as any')
+  public getOctokit(): Octokit {
+    return this.octokit;
+  }
+
   // ========== PULL REQUEST METHODS ==========
   async getPullRequestFiles(owner: string, repo: string, pullNumber: number) {
     const { data } = await this.octokit.rest.pulls.listFiles({

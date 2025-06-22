@@ -94,10 +94,23 @@ npm run auto-review
 
 ## ⚙️ Cấu Hình
 
-Cập nhật API keys trong `src/config/env.ts`:
+**QUAN TRỌNG: Bảo mật API Keys**
 
-- GitHub token để truy cập PR
-- Gemini API key để AI review
+1. Copy file `.env.example` thành `.env`:
+
+```bash
+cp .env.example .env
+```
+
+2. Điền API keys thực vào file `.env`:
+
+```bash
+GITHUB_TOKEN=your_actual_github_token
+GEMINI_API_KEY=your_actual_gemini_api_key
+OPENAI_API_KEY=your_actual_openai_api_key (nếu dùng)
+```
+
+**⚠️ KHÔNG BAO GIỜ commit file .env lên Git!**
 
 ## 📁 Cấu Trúc
 
