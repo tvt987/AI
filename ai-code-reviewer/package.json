@@ -1,31 +1,27 @@
 {
   "name": "ai-code-reviewer",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "AI Code Review Tool with Gemini AI and GitHub API",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "chat": "npx ts-node src/chat-gemini.ts",
+    "preview": "npx ts-node src/preview-pull-request.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "ai",
+    "code-review",
+    "gemini",
+    "github",
+    "pull-request"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "notes": {
-    "dependencies": "This is build API backend with OpenAI API and GitHub API",
-    "devDependencies": "This is for project with TypeScript, nodemon for development, and types for Express and Node.js"
-  },
   "dependencies": {
     "@octokit/rest": "^22.0.0",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "node-fetch": "^3.3.2",
-    "openai": "^5.6.0"
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
-    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "compilerOptions": {

@@ -96,4 +96,44 @@ ${code}
 
     return result;
   }
+
+  async chatWithAI(message: string): Promise<string> {
+    const url = `${this.endpoint}?key=${this.apiKey}`;
+
+    const body = {
+      contents: [
+        {
+          parts: [
+            {
+              text: message,
+            },
+          ],
+        },
+      ],
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    interface GeminiResponse {
+      candidates?: {
+        content?: {
+          parts?: {
+            text?: string;
+          }[];
+        };
+      }[];
+    }
+
+    const data = (await response.json()) as GeminiResponse;
+
+    const result =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+      "No response returned by Gemini.";
+
+    return result;
+  }
 }
